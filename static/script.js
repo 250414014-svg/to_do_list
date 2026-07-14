@@ -1,121 +1,334 @@
-// ── Animasi debu ───────────────────────────────────────────
-const dustEl = document.getElementById('dust');
-for (let i = 0; i < 18; i++) {
-    const s = document.createElement('span');
-    const size = Math.random() * 4 + 2;
-    s.style.cssText = `
-        width:${size}px; height:${size}px;
-        left:${Math.random()*100}%;
-        animation-duration:${8+Math.random()*14}s;
-        animation-delay:${Math.random()*12}s;
-    `;
-    dustEl.appendChild(s);
+let currentFilter = "all";
+
+// =====================
+// OPEN / CLOSE BOOK
+// =====================
+
+function openBook(){
+
+    document.getElementById("coverPage").style.display = "none";
+
+    document.getElementById("appPage").style.display = "flex";
+
+    loadTasks();
 }
 
-// ── Buka / tutup buku ──────────────────────────────────────
-function bukaBuku() {
-    document.getElementById('book').classList.add('buka');
-    setTimeout(() => {
-        document.getElementById('appPage').classList.add('tampil');
-        loadTasks();
-    }, 600);
+function closeBook(){
+
+    document.getElementById("appPage").style.display = "none";
+
+    document.getElementById("coverPage").style.display = "flex";
 }
 
-function tutupApp() {
-    document.getElementById('appPage').classList.remove('tampil');
-    setTimeout(() => {
-        document.getElementById('book').classList.remove('buka');
-    }, 300);
-}
 
-// ══════════════════════════════════════════════════════════════
-//  FUNGSI TUGAS — sama persis seperti script asli
-// ══════════════════════════════════════════════════════════════
+// =====================
+// LOAD TASKS
+// =====================
 
-async function loadTasks() {
+async function loadTasks(){
 
-    const res = await fetch('/tasks');
+    const res = await fetch("/tasks");
+
     const data = await res.json();
 
-    const list = document.getElementById('taskList');
-    const empty = document.getElementById('emptyState');
+    const taskList =
+        document.getElementById("taskList");
 
-    list.innerHTML = '';
+    const emptyState =
+        document.getElementById("emptyState");
 
-    if (data.length === 0) {
-        empty.style.display = 'block';
+    const keyword =
+        document.getElementById("searchInput")
+        .value
+        .toLowerCase();
+
+    taskList.innerHTML = "";
+
+    let count = 0;
+
+    data.forEach((task,index)=>{
+
+        // FILTER
+
+        if(
+            currentFilter === "done" &&
+            !task.done
+        ){
+            return;
+        }
+
+        if(
+            currentFilter === "undone" &&
+            task.done
+        ){
+            return;
+        }
+
+        // SEARCH
+
+        if(
+            keyword &&
+            !task.text
+            .toLowerCase()
+            .includes(keyword)
+        ){
+            return;
+        }
+
+        count++;
+
+        const li =
+            document.createElement("li");
+
+        li.innerHTML = `
+
+            <span class="
+                task-text
+                ${task.done ? "done" : ""}
+            ">
+                ${task.text}
+            </span>
+
+            <div class="action-buttons">
+
+                <button
+                    class="edit-btn"
+                    onclick="editTask(${index})"
+                >
+                    ✏️
+                </button>
+
+                <button
+                    class="done-btn"
+                    onclick="toggleTask(${index})"
+                >
+                    ✓
+                </button>
+
+                <button
+                    class="delete-btn"
+                    onclick="deleteTask(${index})"
+                >
+                    🗑
+                </button>
+
+            </div>
+
+        `;
+
+        taskList.appendChild(li);
+    });
+
+    if(count === 0){
+
+        emptyState.style.display = "block";
+
+    }else{
+
+        emptyState.style.display = "none";
+    }
+}
+
+
+// =====================
+// ADD TASK
+// =====================
+
+async function addTask(){
+
+    const input =
+        document.getElementById("taskInput");
+
+    const text =
+        input.value.trim();
+
+    if(text === ""){
+
+        alert("Tugas kosong!");
+
         return;
     }
 
-    empty.style.display = 'none';
+    await fetch("/add",{
 
-    data.forEach((task, index) => {
+        method:"POST",
 
-        const li = document.createElement('li');
-        li.setAttribute('data-num', index + 1);
+        headers:{
+            "Content-Type":"application/json"
+        },
 
-        li.innerHTML = `
-            <span class="teks ${task.done ? 'selesai' : ''}">
-                ${task.text}
-            </span>
-            <div class="btn-group">
-                <button onclick="toggleTask(${index})" title="Selesai">✓</button>
-                <button onclick="deleteTask(${index})" title="Hapus">🗑</button>
-            </div>
-        `;
+        body:JSON.stringify({
+            text:text
+        })
 
-        list.appendChild(li);
-    });
-}
-
-async function addTask() {
-
-    const input = document.getElementById('taskInput');
-
-    if (input.value.trim() === '') return;
-
-    await fetch('/add', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: input.value })
     });
 
-    input.value = '';
-    loadTasks();
-}
-
-async function deleteTask(index) {
-
-    await fetch(`/delete/${index}`, {
-        method: 'DELETE'
-    });
+    input.value = "";
 
     loadTasks();
 }
 
-async function toggleTask(index) {
 
-    await fetch(`/toggle/${index}`, {
-        method: 'POST'
-    });
+// =====================
+// DELETE
+// =====================
+
+async function deleteTask(index){
+
+    if(
+        !confirm(
+            "Yakin ingin menghapus tugas?"
+        )
+    ){
+        return;
+    }
+
+    await fetch(
+        `/delete/${index}`,
+        {
+            method:"DELETE"
+        }
+    );
+
+    loadTasks();
+}
+
+
+// =====================
+// TOGGLE DONE
+// =====================
+
+async function toggleTask(index){
+
+    await fetch(
+
+        `/toggle/${index}`,
+
+        {
+            method:"POST"
+        }
+
+    );
 
     loadTasks();
 }
 
-async function undoTask() {
 
-    await fetch('/undo', {
-        method: 'POST'
-    });
+// =====================
+// EDIT
+// =====================
+
+async function editTask(index){
+
+    const res =
+        await fetch("/tasks");
+
+    const data =
+        await res.json();
+
+    const oldText =
+        data[index].text;
+
+    const newText =
+        prompt(
+            "Edit tugas:",
+            oldText
+        );
+
+    if(
+        newText === null
+    ){
+        return;
+    }
+
+    if(
+        newText.trim() === ""
+    ){
+        alert(
+            "Tugas tidak boleh kosong!"
+        );
+
+        return;
+    }
+
+    await fetch(
+
+        `/edit/${index}`,
+
+        {
+            method:"POST",
+
+            headers:{
+                "Content-Type":"application/json"
+            },
+
+            body:JSON.stringify({
+                text:newText
+            })
+        }
+    );
 
     loadTasks();
 }
 
-async function redoTask() {
 
-    await fetch('/redo', {
-        method: 'POST'
-    });
+// =====================
+// FILTER
+// =====================
+
+function setFilter(type){
+
+    currentFilter = type;
 
     loadTasks();
 }
+
+
+// =====================
+// UNDO
+// =====================
+
+async function undoTask(){
+
+    await fetch(
+
+        "/undo",
+
+        {
+            method:"POST"
+        }
+
+    );
+
+    loadTasks();
+}
+
+
+// =====================
+// REDO
+// =====================
+
+async function redoTask(){
+
+    await fetch(
+
+        "/redo",
+
+        {
+            method:"POST"
+        }
+
+    );
+
+    loadTasks();
+}
+
+
+// =====================
+// START
+// =====================
+
+window.onload = function(){
+
+    loadTasks();
+};
