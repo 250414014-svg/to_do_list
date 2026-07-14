@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To Do List</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<!-- ── LATAR BELAKANG ── -->
+<div class="dust" id="dust"></div>
+
+<!-- ══════════════════════════════════════
+     HALAMAN 1 — COVER BUKU
+════════════════════════════════════════ -->
+<div id="coverPage">
+    <div id="book" onclick="bukaBuku()">
+        <!-- Punggung buku -->
+        <div class="spine"><span>TASK BOOK</span></div>
+        <!-- Cover depan -->
+        <div class="front">
+            <div class="gold-border"></div>
+            <div class="front-content">
+                <div class="cover-label">Kelompok 1 — Linear DS</div>
+                <div class="cover-icon">📖</div>
+                <div class="cover-title">Task<br><em>Book</em></div>
+                <div class="ornament"></div>
+                <div class="cover-sub">To-Do List dengan<br>Undo &amp; Redo</div>
+                <div class="cover-cta">Buka Buku</div>
+            </div>
+        </div>
+        <!-- Cover belakang -->
+        <div class="back"></div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     HALAMAN 2 — APLIKASI TODO
+════════════════════════════════════════ -->
+<div id="appPage">
+
+    <!-- Header -->
+    <div class="app-header">
+        <div>
+            <button class="back-btn" onclick="tutupApp()">← Tutup Buku</button>
+            <div class="app-title">Task <span>Book</span></div>
+        </div>
+        <div class="ur-group">
+            <button onclick="undoTask()" id="undoBtn">↩ Undo</button>
+            <button onclick="redoTask()" id="redoBtn">↪ Redo</button>
+        </div>
+    </div>
+
+    <!-- Input tambah tugas -->
+    <div class="add-area">
+        <input
+            type="text"
+            id="taskInput"
+            placeholder="Tulis tugas baru…"
+            onkeydown="if(event.key==='Enter') addTask()"
+        >
+        <button onclick="addTask()">+</button>
+    </div>
+
+    <!-- Daftar tugas — tampilan buku catatan -->
+    <div class="notebook">
+        <div class="red-line"></div>
+        <ul id="taskList"></ul>
+        <div id="emptyState" class="empty-state" style="display:none">
+            <div>✍️</div>
+            <p>Belum ada tugas.<br>Tulis sesuatu di atas!</p>
+        </div>
+    </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
